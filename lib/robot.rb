@@ -5,7 +5,7 @@ class Robot
   @@robots = []
 
   def initialize
-    @position = [0,0]
+    @position = {x: 0, y: 0} #Hash may be more appropriate
     @items = []
     @health = 100
     @equipped_weapon = nil
@@ -13,20 +13,25 @@ class Robot
     @@robots << self
   end
 
+  def position
+    [@position[:x], @position[:y]]
+  end
+
+  #check type (input sanitization)
   def move_left
-    @position[0] -= 1
+    @position[:x] -= 1
   end
 
   def move_right
-    @position[0] += 1
+    @position[:x] += 1
   end
 
   def move_up
-    @position[1] += 1
+    @position[:y] += 1
   end
 
   def move_down
-    @position[1] -= 1
+    @position[:y] -= 1
   end
 
   def pick_up(item)
@@ -34,9 +39,7 @@ class Robot
       @equipped_weapon = item
     elsif item.is_a?(BoxOfBolts) && can_pick_up?(item)
         @items << item
-        if health <= 80
-          item.feed(self)
-        end
+        item.feed(self) if health <= 80
     elsif can_pick_up?(item)
       @items << item
     else
@@ -49,7 +52,7 @@ class Robot
   end
 
   def items_weight
-    items.inject(0){|sum,x| sum + x }
+    items.inject(0){|sum,x| sum + x.weight }
   end
 
   def get_shield_damage(damage)
@@ -79,11 +82,7 @@ class Robot
   end
 
   def heal(amount)
-    if amount + @health > 100
-      @health = 100
-    else
-      @health += amount
-    end
+    (amount + @health > 100) ? @health = 100 : @health += amount
   end
 
   def heal!(amount)
@@ -94,23 +93,30 @@ class Robot
     end
   end
 
-  def get_vertical_distance(robot2)
-    vertical_distance = (robot2.position[1]-self.position[1]).abs
+  def get_vertical_dist(robot2)
+    vertical_dist = (robot2.position[1]-self.position[1]).abs
   end
 
-  def get_lateral_distance(robot2)
-    lateral_distance = (robot2.position[0]-self.position[0]).abs
+  def get_lateral_dist(robot2)
+    lateral_dist = (robot2.position[0]-self.position[0]).abs
+  end
+
+  def can_attack_with_weapon?(weapon, vertical_dist, lateral_dist)
+    weapon && weapon.within_weapon_range?(vertical_dist, lateral_dist)
+  end
+
+  def default_attack?(weapon, vertical_dist, lateral_dist)
+    !(weapon) && vertical_dist <= 1 && lateral_dist <= 1
   end
 
   def attack(robot2)
-    vertical_distance = get_vertical_distance(robot2)
-    lateral_distance = get_lateral_distance(robot2)
-    #binding.pry
-    if !(@equipped_weapon) && vertical_distance <= 1 && lateral_distance <= 1
+    vertical_dist = get_vertical_dist(robot2)
+    lateral_dist = get_lateral_dist(robot2)
+    if default_attack?(@equipped_weapon, vertical_dist, lateral_dist)
       robot2.wound(5)
-    elsif @equipped_weapon && (vertical_distance <= @equipped_weapon.range) && (lateral_distance <= @equipped_weapon.range)
+    elsif can_attack_with_weapon?(@equipped_weapon, vertical_dist, lateral_dist)
       @equipped_weapon.hit(robot2)
-      if @equipped_weapon.name == "Grenade"
+      if @equipped_weapon.is_a?(Grenade)
         @equipped_weapon = nil
       end
     else
@@ -126,21 +132,23 @@ class Robot
     end
   end
 
+  #:TODO Condense w/ in_position
   def scan
     surroundings = {}
-    up = Robot.in_position(@position[0], @position[1]+1)
+    binding.pry
+    up = Robot.in_position(position[0], position[1]+1)
     if up
       surroundings[:above] = up
     end
-    down = Robot.in_position(@position[0], @position[1]-1)
+    down = Robot.in_position(position[0], position[1]-1)
     if down
       surroundings[:below] = down
     end
-    right = Robot.in_position(@position[0]+1, @position[0])
+    right = Robot.in_position(position[0]+1, position[1])
     if right
       surroundings[:right] = right
     end
-    left = Robot.in_position(@position[0]-1, @position[0])
+    left = Robot.in_position(position[0]-1, position[1])
     if left
       surroundings[:left] = left
     end
@@ -155,9 +163,7 @@ class Robot
 
   class << self
     def in_position(x,y)
-      position = []
-      position[0] = x
-      position[1] = y
+      position = [x,y]
       robots_in_position = []
       @@robots.each do |robot|
         if robot.position == position

@@ -7,4 +7,9 @@ class Grenade < Weapon
     @range = 2
   end
 
+  def within_weapon_range?(vertical_distance, horizontal_distance)
+    binding.pry
+    (vertical_distance <= range && horizontal_distance <= range)
+  end
+
 end

@@ -30,7 +30,6 @@ describe Robot do
     it "should set shield points back to 50" do
       @robot.pick_up(@battery)
       @robot.wound(40)
-      binding.pry
       @robot.items[0].recharge(@robot)
       expect(@robot.shield.points).to eq(50)
     end

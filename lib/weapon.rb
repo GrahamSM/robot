@@ -11,4 +11,5 @@ attr_reader :damage, :weight
   def hit(robot)
     robot.wound(damage)
   end
+
 end

@@ -20,7 +20,7 @@ describe Robot do
   # This test is basically saying that it expects @robot.position == [0, 0]
   describe "#position" do
     it "starts off at the center of the board, which is 0,0" do
-      expect(@robot.position).to be == [0,0]
+      expect(@robot.position).to eq([0,0])
     end
   end
 
