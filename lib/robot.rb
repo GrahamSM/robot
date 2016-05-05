@@ -49,15 +49,7 @@ class Robot
   end
 
   def items_weight
-    weight = 0
-    if items.size == 0
-      weight
-    else
-      @items.each do |item|
-        weight += item.weight
-      end
-    end
-    weight
+    items.inject(0){|sum,x| sum + x }
   end
 
   def get_shield_damage(damage)
