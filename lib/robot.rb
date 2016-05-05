@@ -1,4 +1,3 @@
-require_relative 'item'
 class Robot
 
   attr_accessor :position, :items, :health, :equipped_weapon
@@ -28,10 +27,15 @@ class Robot
   end
 
   def pick_up(item)
-    if item.is_a?(Weapon)
+    if item.is_a?(Weapon) && can_put_up?(item)
       @equipped_weapon = item
+    elsif item.is_a?(BoxOfBolts) && can_pick_up?(item)
+        @items << item
+        if health <= 80
+          item.feed(self)
+        end
     else
-      can_pick_up?(item) ? @items << item : false
+      puts "Too heavy!"
     end
   end
 
@@ -76,8 +80,26 @@ class Robot
     end
   end
 
+  def get_vertical_distance(robot2)
+    vertical_distance = (robot2.position[1]-self.position[1]).abs
+  end
+
+  def get_lateral_distance(robot2)
+    lateral_distance = (robot2.position[0]-self.position[0]).abs
+  end
+
   def attack(robot2)
-    @equipped_weapon ? @equipped_weapon.hit(robot2) : robot2.wound(5)
+    vertical_distance = get_vertical_distance(robot2)
+    lateral_distance = get_lateral_distance(robot2)
+    #binding.pry
+    if @equipped_weapon && (vertical_distance <= @equipped_weapon.range) && (lateral_distance <= @equipped_weapon.range)
+      @equipped_weapon.hit(robot2)
+      if @equipped_weapon.name == "Grenade"
+        @equipped_weapon = nil
+      end
+    else
+      puts "Unable to attack!"
+    end
   end
 
   def attack!(robot2)
