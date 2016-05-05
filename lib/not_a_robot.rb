@@ -1,0 +1,2 @@
+class NotARobotError < StandardError
+end
